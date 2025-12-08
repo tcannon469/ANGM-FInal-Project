@@ -14,23 +14,6 @@ GREEN = (0, 200, 0)
 BROWN = (139, 69, 19)
 RED = (200, 50, 50)
 
-# * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * 
-# Function to build the level based on the level_map found in file level_maps.py
-# Input: Level Map (2D List)
-# Output: List of Tile Rects and Player Start Position  
-# # * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *    
-def build_level(level_map):
-    tiles = []
-    for row_index, row in enumerate(level_map):
-        for col_index, tile in enumerate(row):
-            x = col_index * TILE_SIZE
-            y = row_index * TILE_SIZE
-            if tile == 'X':
-                tiles.append(pygame.Rect(x, y, TILE_SIZE, TILE_SIZE))
-            elif tile == 'P':
-                player_start_pos = (x, y)
-    return tiles, player_start_pos
-
 # * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 #                                 Player Class
 # * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -101,9 +84,14 @@ class Player:
 
     #   Update the player's position based on velocity and apply gravity
     def update(self, tiles):
-        self. handle_input()
+        self.handle_input()
         self.apply_gravity()
         self.move_and_collide(tiles)
+
+
+    # Check if the player finished the current level
+    def reached_end(self, level_width_pixels):
+        return self.rect.right >= level_width_pixels
 
     #   Draw the player on the given surface
     def draw(self, surface, camera_x):
@@ -121,23 +109,41 @@ def get_camera_x(player, level_width_pixels):
     target_x = max(0, min(target_x, level_width_pixels - WIDTH))
     return target_x
 
+# * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * 
+#   Function to build the level based on the level_map found in file level_maps.py
+#   Input: Level Map (2D List)
+#   Output: List of Tile Rects and Player Start Position  
+# * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *    
+def build_level(level_map):
+    tiles = []
+    for row_index, row in enumerate(level_map):
+        for col_index, tile in enumerate(row):
+            x = col_index * TILE_SIZE
+            y = row_index * TILE_SIZE
+            if tile == 'X':
+                tiles.append(pygame.Rect(x, y, TILE_SIZE, TILE_SIZE))
+            elif tile == 'P':
+                player_start_pos = (x, y)
+    return tiles, player_start_pos
+
 
 # * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 #                      M A I N   P R O G R A M
 # * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 def main():
+    current_level = 0
     clock = pygame.time.Clock()
     pygame.init()
     screen = pygame.display.set_mode((800, 600))
     pygame.display.set_caption("Final Projet - Thomas Cannon  -  My Mini Mario")
-
-    tiles,playerPos = build_level(LEVEL_MAPS[0])
-       
+   
+    tiles,playerPos = build_level(LEVEL_MAPS[current_level])
+   # Setting the stage and the player 
     px, py = playerPos
     player = Player(px, py)
-    level_width_pixels = len(LEVEL_MAPS[0]) * TILE_SIZE
+    level_width_pixels = len(LEVEL_MAPS[current_level]) * TILE_SIZE
     running = True
-  
+      
     # Main loop to keep the window open
     while running:
         dt = clock.tick(FPS)  # Amount of seconds between each loop
@@ -149,6 +155,24 @@ def main():
                 running = False
         # Update 
         player.update(tiles)
+        # If player reached the end of the screen goes to the next level or game ends
+        if player.reached_end(level_width_pixels):
+            current_level += 1
+            if current_level >= len(LEVEL_MAPS):
+                screen.fill((0, 0, 0))
+                font = pygame.font.SysFont(None, 48)
+                text = font.render("You finished all levels!", True, (255, 255, 255))
+                screen.blit(text, (100, 250))
+                pygame.display.flip()
+                pygame.time.delay(3000)
+                running = False
+            else:
+                tiles, playerPos = build_level(LEVEL_MAPS[current_level])
+                player.rect.topleft = playerPos
+                player.vel_x = 0
+                player.vel_y = 0
+                level_width_pixels = len(LEVEL_MAPS[current_level][0]) * TILE_SIZE
+
         camera_x = get_camera_x(player, level_width_pixels)
         
         # Draw 

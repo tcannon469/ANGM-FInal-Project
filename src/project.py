@@ -48,7 +48,7 @@ class Player:
         self.animations = self.load_animations()
         self.image = self.animations["idle"][0] if self.animations["idle"] else None
 
-    #  LOAD ANIMATIONS 
+    #  LOAD ANIMATIONS FOR THE PLAYER DEPENDING ON ITS CURRENT STATE
     #---------------------------------------------------------
     def load_animations(self):
         animations = {}
@@ -100,7 +100,7 @@ class Player:
 
         return animations
 
-    #  HANDLING INPUT 
+    #  HANDLING INPUT FROM THE KEYBOARD
     #---------------------------------------------------------
     def handle_input(self):
         keys = pygame.key.get_pressed()
@@ -125,7 +125,7 @@ class Player:
             self.vel_y = self.max_fall_speed
 
     def move_and_collide(self, tiles):
-        # horizontal
+        # horizontal collisions
         self.rect.x += self.vel_x
         for tile in tiles:
             if self.rect.colliderect(tile):
@@ -134,7 +134,7 @@ class Player:
                 elif self.vel_x < 0:
                     self.rect.left = tile.right
 
-        # vertical
+        # vertical collisions
         self.rect.y += self.vel_y
         self.on_ground = False
         for tile in tiles:
@@ -147,7 +147,7 @@ class Player:
                     self.rect.top = tile.bottom
                     self.vel_y = 0
 
-    #  STATE & ANIMATION OF THE PLAYER 
+    # QUERING TO GET THE STATE OF THE PLAYER 
     #---------------------------------------------------------
     def update_state(self):
         if not self.on_ground:
@@ -160,7 +160,9 @@ class Player:
                 self.state = "run"
             else:
                 self.state = "idle"
-
+                
+    # MAKES THE PLAYER MOVES SMOTHLY LIKE IN A SHORT VIDEO 
+    #---------------------------------------------------------
     def animate(self):
         frames = self.animations.get(self.state, [])
         if not frames:
@@ -176,7 +178,7 @@ class Player:
             frame = pygame.transform.flip(frame, True, False)
         self.image = frame
 
-    #  UPDATE & DRAW 
+    #  UPDATE  PLAYER DEPENDING OF CURRENT EVENTS
     #---------------------------------------------------------
     def update(self, tiles):
         self.handle_input()
@@ -185,6 +187,8 @@ class Player:
         self.update_state()
         self.animate()
 
+    #  DRAW PLAYER 
+    #---------------------------------------------------------
  
     def draw(self, surface, camera_x):
         draw_rect = self.rect.copy()
@@ -194,7 +198,7 @@ class Player:
         else:
             pygame.draw.rect(surface, self.color, draw_rect)
 
-    #  Reached end of level, moving to the end 
+    #  PLAYER REACHED THE END OF THE LEVEL  
     #---------------------------------------------------------
     def reached_end(self, level_width_pixels):
         return self.rect.right >= level_width_pixels
@@ -202,7 +206,7 @@ class Player:
 
 
 # ************************************************************
-# LEVEL BUILDING
+# CREATES THE  CURRENT  LEVEL ENVIRONMENT BASED ON THE TEXT BASED FILE FOUND IN LEVELMAPS
 # ************************************************************
 def build_level(level_map):
     tiles = []
@@ -221,7 +225,7 @@ def build_level(level_map):
 
 
 # ************************************************************
-# CAMERA
+# HELPS WITH THE SCROLLING OF THE BACKGROUND WHILE THE PLAYER RUNS
 # ************************************************************
 def get_camera_x(player, level_width_pixels):
     target_x = player.rect.centerx - WIDTH // 2
@@ -248,7 +252,7 @@ def load_tile_images():
 
 
 # ************************************************************
-# FINAL END SCREEN
+# FINAL SCREEN AND CLOSING THE PROGRAM
 # ************************************************************
 def show_end_screen(screen):
     """Show final image and wait for key press or window close."""
@@ -326,7 +330,7 @@ def main():
 
         camera_x = get_camera_x(player, level_width_pixels)
 
-        # Draw
+        # Drawing background
         screen.fill(SKY_BLUE)
 
         # Draw tilemap with grass top + dirt underneath
@@ -338,13 +342,13 @@ def main():
             col = tile.x // TILE_SIZE
             row = tile.y // TILE_SIZE
 
-            # Neighbors
+            # Neighboring blocks
             left_exists = col > 0 and level_rows[row][col - 1] == "X"
             right_exists = col < len(level_rows[0]) - 1 and level_rows[row][col + 1] == "X"
             above_exists = row > 0 and level_rows[row - 1][col] == "X"
 
             if not above_exists:
-                # Topmost block -> grass
+                #  Put grass at the top
                 if not left_exists and not right_exists:
                     img = tile_images["grass_single"]
                 elif not left_exists and right_exists:
@@ -354,7 +358,7 @@ def main():
                 elif left_exists and not right_exists:
                     img = tile_images["grass_right"]
             else:
-                # Something above => dirt
+                # Put dirt if there is a block  above 
                 img = tile_images["dirt"]
 
             screen.blit(img, r)

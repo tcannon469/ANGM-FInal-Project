@@ -107,7 +107,7 @@ LEVEL_MAPS = [
 
 Legend:
 
- -X = Solid block
+- X = Solid block
 - P = Player starting point
 - . = Empty space
 
